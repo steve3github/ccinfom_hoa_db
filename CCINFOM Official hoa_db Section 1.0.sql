@@ -463,6 +463,39 @@ CREATE TABLE IF NOT EXISTS residential_prop (
     REFERENCES	household(household_id)
 );
 
+-- -----------------------------------------------------
+-- Table donor
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS donor;
+CREATE TABLE IF NOT EXISTS donor (
+  donor_id 		INT NOT NULL,
+  donor_name 	VARCHAR(255) NOT NULL,
+  donor_type 	VARCHAR(20) NOT NULL,
+  donor_address VARCHAR(255) NOT NULL,
+  INDEX (donor_id ASC),
+  PRIMARY KEY (donor_id)
+);
+
+-- -----------------------------------------------------
+-- Table donation
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS donation;
+CREATE TABLE IF NOT EXISTS donation (
+  donation_id 			INT NOT NULL,
+  donor_id 				INT NOT NULL,
+  item 					VARCHAR(255) NOT NULL,
+  item_amount 			INT NOT NULL,
+  officer_id 			INT(5) NOT NULL,
+  event_pictures 		VARCHAR(255) NOT NULL,
+  donation_form 		VARCHAR(255) NOT NULL,
+  donation_date 		DATE NOT NULL,
+  INDEX (donation_id ASC),
+  PRIMARY KEY (donation_id),
+  FOREIGN KEY (donor_id) 
+	REFERENCES donor(donor_id),
+  FOREIGN KEY (officer_id) 
+	REFERENCES hoa_officer(officer_id)
+);
 
 -- -----------------------------------------------------
 -- Add records to regions
@@ -692,3 +725,21 @@ INSERT INTO	residential_prop
 			('B11L08', 42002),
             ('B42l09', 42003),
             ('B25L10', 42004);
+
+-- -----------------------------------------------------
+-- Add records to donor
+-- -----------------------------------------------------
+INSERT INTO	donor
+	VALUES	(1, 'John Doe', 'resident', '1234 Bernard St. Region 2, Manila'),
+			(2, 'Mary Sue', 'non-resident', '4321 Rizal St. Bush Village, Quezon'),
+            (3, 'Gary Ong', 'resident', '2401 Taft Ave. Manila City, NCR');
+
+-- -----------------------------------------------------
+-- Add records to donation
+-- -----------------------------------------------------
+INSERT INTO	donation
+	VALUES	(10, 1, 'Toy', 5, 99901, 'None', 'Received', '2023-02-02'),
+			(11, 1, 'Medkit', 10, 99901, 'None', 'Received', '2023-02-02'),
+            (12, 2, 'Medicine', 25, 99902, 'donation21.png', 'Received', '2023-03-15'),
+            (13, 2, 'Clothes', 20, 99902, 'donation22.png', 'Received', '2023-03-15'),
+            (14, 3, 'Shoes', 30, 99901, 'donation31.png', 'Approved', '2023-05-23');
