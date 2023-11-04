@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS individual (
   gender			ENUM('M', 'F') NOT NULL,
   fb_url			VARCHAR(45) NULL,
   picture			BLOB NOT NULL,
-  indiv_type		ENUM('R', 'H', 'HR') NOT NULL,
+  indiv_type		ENUM('R', 'H', 'HR', 'O') NOT NULL,
   PRIMARY KEY		(individual_id),
   UNIQUE INDEX		(email ASC),
   UNIQUE INDEX		(fb_url ASC)
@@ -464,53 +464,48 @@ CREATE TABLE IF NOT EXISTS residential_prop (
 );
 
 -- -----------------------------------------------------
--- Table donor
--- -----------------------------------------------------
-DROP TABLE IF EXISTS donor;
-CREATE TABLE IF NOT EXISTS donor (
-  donor_id 			INT(5) NOT NULL,
-  donor_type 		ENUM('Resident', 'Non-resident') NOT NULL,
-  individual_id		INT(10) NOT NULL,
-  INDEX (donor_id ASC),
-  PRIMARY KEY (donor_id),
-  UNIQUE INDEX (individual_id),
-  FOREIGN KEY (individual_id) 
-	REFERENCES individual(individual_id)
-);
-
--- -----------------------------------------------------
--- Table donation
+-- Table donation_record
 -- ----------------------------------------------------- 
-DROP TABLE IF EXISTS donation;
-CREATE TABLE IF NOT EXISTS donation (
-  donation_id 			INT(5) NOT NULL,
-  donor_id 				INT(5) NOT NULL,
-  officer_id 			INT(5) NOT NULL,
-  event_pictures 		BLOB,
+DROP TABLE IF EXISTS donation_record;
+CREATE TABLE IF NOT EXISTS donation_record (
+  donation_record_id 	INT NOT NULL,
+  donor_id 				INT NOT NULL,
+  accepting_officer_id 	INT(5) NOT NULL,
   donation_date 		DATE NOT NULL,
-  INDEX (donation_id ASC),
-  PRIMARY KEY (donation_id),
+  donation_form			VARCHAR(45) NOT NULL,
+  is_deleted			BOOLEAN NOT NULL,
+  INDEX (donation_record_id ASC),
+  PRIMARY KEY (donation_record_id),
   FOREIGN KEY (donor_id) 
-	REFERENCES donor(donor_id),
---   FOREIGN KEY (donation_form) 
--- 	REFERENCES hoa_files(donation_form),
-  FOREIGN KEY (officer_id)
+	REFERENCES individual(individual_id),
+  FOREIGN KEY (accepting_officer_id)
 	REFERENCES hoa_officer(officer_id)
 );
 
-- -----------------------------------------------------
+-- -----------------------------------------------------
 -- Table item
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS item;
 CREATE TABLE IF NOT EXISTS item (
-  item_id 			INT(5) NOT NULL,
-  item_name 		VARCHAR(45) NOT NULL,
-  item_amount		INT NOT NULL,
-  donation_id		INT(10) NOT NULL,
-  INDEX (item_id ASC),
-  PRIMARY KEY (item_id),
-  FOREIGN KEY (donation_id) 
-	REFERENCES donation(donation_id)
+  item_donated			VARCHAR(45) NOT NULL,
+  item_amount			INT NOT NULL,
+  donation_record_id	INT NOT NULL,
+  is_deleted			BOOLEAN NOT NULL,
+  FOREIGN KEY (donation_record_id)
+	REFERENCES donation_record(donation_record_id)
+);
+
+-- -----------------------------------------------------
+-- Table donation_pictures
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS donation_pictures;
+CREATE TABLE IF NOT EXISTS donation_pictures (
+  donation_picture		BLOB,
+  donation_record_id	INT NOT NULL,
+  is_deleted			BOOLEAN NOT NULL,
+  PRIMARY KEY (donation_record_id),
+  FOREIGN KEY (donation_record_id)
+	REFERENCES donation_record(donation_record_id)
 );
 
 -- -----------------------------------------------------
@@ -633,12 +628,7 @@ INSERT INTO	hoa_officer
 INSERT INTO	hoa_files
 	VALUES	(555556661,'bylaws.pdf', 'notarized by-laws','D:/Animo HOA Documents/', 'pdf', '2020-03-17', 'Jose Rizal', 99901, 'Animo HOA'),
 			(555556662,'ABC1234-ORCR2022.pdf', 'ABC1234 ORCR 2022','D:/Animo HOA Documents/Vehicle Registration/', 'pdf', '2022-05-06', 'Juan Dela Cruz', 99902, 'Animo HOA'),
-            (555556663,'DEF6789-ORCR2022.pdf', 'DEF6789 ORCR 2022','D:/Animo HOA Documents/Vehicle Registration/', 'pdf', '2022-05-10', 'Emilio Aguinaldo', 99902, 'Animo HOA'),
-            (555556664,'donationForm001.pdf', 'Donation Form 1','D:/Animo HOA Documents/Donation Forms/', 'pdf', '2020-02-02', 'Juan Dela Cruz', 99901, 'Animo HOA'),
-            (555556665,'donationForm002.pdf', 'Donation Form 2','D:/Animo HOA Documents/Donation Forms/', 'pdf', '2020-02-02', 'Juan Dela Cruz', 99901, 'Animo HOA'),
-            (555556666,'donationForm003.pdf', 'Donation Form 3','D:/Animo HOA Documents/Donation Forms/', 'pdf', '2020-03-15', 'Juan Luna', 99902, 'Animo HOA'),
-            (555556667,'donationForm004.pdf', 'Donation Form 4','D:/Animo HOA Documents/Donation Forms/', 'pdf', '2020-03-15', 'Juan Luna', 99902, 'Animo HOA'),
-            (555556668,'donationForm005.pdf', 'Donation Form 5','D:/Animo HOA Documents/Donation Forms/', 'pdf', '2020-05-23', 'Jose Rizal', 99901, 'Animo HOA');
+            (555556663,'DEF6789-ORCR2022.pdf', 'DEF6789 ORCR 2022','D:/Animo HOA Documents/Vehicle Registration/', 'pdf', '2022-05-10', 'Emilio Aguinaldo', 99902, 'Animo HOA');
 
 -- -----------------------------------------------------
 -- Add records to property
@@ -748,33 +738,35 @@ INSERT INTO	residential_prop
             ('B25L10', 42004);
 
 -- -----------------------------------------------------
--- Add records to donor
+-- Add records to donation_record
 -- -----------------------------------------------------
-INSERT INTO	donor
-	VALUES	(1, 'Resident', 2023202410),
-			(2, 'Non-resident', 2023202412),
-            (3, 'Resident', 2023202415);
-
--- -----------------------------------------------------
--- Add records to donation
--- -----------------------------------------------------
-INSERT INTO	donation
-	VALUES	(10, 1, 99901, NULL, '2023-02-02'),
-			(11, 1, 99901, NULL, '2023-02-02'),
-            (12, 2, 99902, 'donation21.png', '2023-03-15'),
-            (13, 2, 99902, 'donation22.png', '2023-03-15'),
-            (14, 3, 99901, 'donation31.png', '2023-05-23');
+INSERT INTO	donation_record
+	VALUES	(10, 2023202410, 99901, '2023-02-02', 'donationForm001.pdf', FALSE),
+			(11, 2023202410, 99901, '2023-02-02', 'donationForm002.pdf', FALSE),
+            (12, 2023202412, 99902, '2023-03-15', 'donationForm003.pdf', FALSE),
+            (13, 2023202412, 99902, '2023-03-15', 'donationForm004.pdf', FALSE),
+            (14, 2023202413, 99901, '2023-05-23', 'donationForm005.pdf', FALSE);
 
 -- -----------------------------------------------------
 -- Add records to item
 -- -----------------------------------------------------
 INSERT INTO	item
-	VALUES	(101, 'Toy', 10, 10),
-			(102, 'Medkit', 10, 10),
-            (103, 'Medicine', 25, 11),
-            (104, 'Medkit', 5, 11),
-            (105, 'Clothes', 20, 12),
-            (106, 'Clothes', 10, 13),
-            (107, 'Shoes', 20, 13),
-            (108, 'Bags', 10, 13),
-            (109, 'Books', 30, 14);
+	VALUES	('Toy', 10, 10, FALSE),
+			('Medkit', 10, 10, FALSE),
+            ('Medicine', 25, 11, FALSE),
+            ('Medkit', 5, 11, FALSE),
+            ('Clothes', 20, 12, FALSE),
+            ('Clothes', 10, 13, FALSE),
+            ('Shoes', 20, 13, FALSE),
+            ('Bags', 10, 13, FALSE),
+            ('Books', 30, 14, FALSE);
+
+-- -----------------------------------------------------
+-- Add records to donation_pictures
+-- -----------------------------------------------------
+INSERT INTO	donation_pictures
+	VALUES	(NULL, 10, TRUE),
+			(NULL, 11, TRUE),
+            ('donation21.png', 12, FALSE),
+            ('donation22.png', 13, FALSE),
+            ('donation31.png', 14, FALSE);
